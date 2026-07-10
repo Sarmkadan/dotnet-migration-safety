@@ -1,0 +1,14 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <Authors>Vladyslav Zaiets</Authors>
+    <Product>Migration Safety Analyzer</Product>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+</Project>

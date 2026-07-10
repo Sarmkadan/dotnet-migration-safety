@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MigrationSafety.Analyzers.CodeFixes/MigrationSafety.Analyzers.CodeFixes.csproj" />
+    <Project Path="src/MigrationSafety.Analyzers.Package/MigrationSafety.Analyzers.Package.csproj" />
+    <Project Path="src/MigrationSafety.Analyzers/MigrationSafety.Analyzers.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MigrationSafety.Analyzers.Tests/MigrationSafety.Analyzers.Tests.csproj" />
+  </Folder>
+</Solution>
