@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+
+    <PackageId>MigrationSafety.Analyzers</PackageId>
+    <Version>0.3.0</Version>
+    <PackageTags>ef-core;migrations;roslyn;analyzer;database;safety</PackageTags>
+    <Description>Roslyn analyzer that flags destructive or lock-heavy EF Core migrations (DropColumn, DropTable, non-concurrent index build, table-rewriting AlterColumn) at build time.</Description>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MigrationSafety.Analyzers\MigrationSafety.Analyzers.csproj" />
+    <ProjectReference Include="..\MigrationSafety.Analyzers.CodeFixes\MigrationSafety.Analyzers.CodeFixes.csproj" />
+  </ItemGroup>
+
+  <!-- Ship the analyzer + code-fix assemblies under analyzers/dotnet/cs so consumers pick them up. -->
+  <Target Name="PackAnalyzerAssemblies" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <_PackAsAnalyzer Include="$(OutputPath)MigrationSafety.Analyzers.dll" />
+      <_PackAsAnalyzer Include="$(OutputPath)MigrationSafety.Analyzers.CodeFixes.dll" />
+      <TfmSpecificPackageFile Include="@(_PackAsAnalyzer)">
+        <PackagePath>analyzers/dotnet/cs</PackagePath>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+  </Target>
+
+</Project>
