@@ -5,6 +5,12 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <IsRoslynComponent>true</IsRoslynComponent>
+    <!-- Never packed directly; the .Package project ships the DLL. A distinct PackageId
+         avoids NuGet's "Ambiguous project name" restore error, because the .Package
+         project's PackageId (MigrationSafety.Analyzers) otherwise collides with this
+         project's restore name in the solution graph. -->
+    <IsPackable>false</IsPackable>
+    <PackageId>MigrationSafety.Analyzers.Internal</PackageId>
     <RootNamespace>MigrationSafety.Analyzers</RootNamespace>
   </PropertyGroup>
 

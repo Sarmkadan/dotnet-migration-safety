@@ -12,6 +12,10 @@
     <NoWarn>$(NoWarn);NU5128</NoWarn>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!-- TfmSpecificPackageFile items are only honoured when contributed through this
+         hook; a plain BeforeTargets="GenerateNuspec" target runs too late and pack
+         fails with NU5017 (empty package). -->
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackAnalyzerAssemblies</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +24,7 @@
   </ItemGroup>
 
   <!-- Ship the analyzer + code-fix assemblies under analyzers/dotnet/cs so consumers pick them up. -->
-  <Target Name="PackAnalyzerAssemblies" BeforeTargets="GenerateNuspec">
+  <Target Name="PackAnalyzerAssemblies">
     <ItemGroup>
       <_PackAsAnalyzer Include="$(OutputPath)MigrationSafety.Analyzers.dll" />
       <_PackAsAnalyzer Include="$(OutputPath)MigrationSafety.Analyzers.CodeFixes.dll" />
