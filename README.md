@@ -84,6 +84,39 @@ in any Roslyn host; the test project runs on the current .NET.
 - Raw `migrationBuilder.Sql(...)` blocks are not parsed - the analyzer only sees the
   strongly typed builder API.
 
+## AnalyzerTests
+
+The `AnalyzerTests` class in `tests/MigrationSafety.Analyzers.Tests/AnalyzerTests.cs` contains integration tests that verify the MigrationSafety analyzers correctly identify unsafe EF Core migration operations. Each test method validates that a specific migration operation triggers (or does not trigger) the expected diagnostic when the analyzer processes generated migration code.
+
+The class provides a reusable pattern for testing analyzer behavior:
+
+```csharp
+using Microsoft.EntityFrameworkCore.Migrations;
+
+public class SomeMigration
+{
+    public void Up(MigrationBuilder migrationBuilder)
+    {
+        // Test various migration operations
+        migrationBuilder.DropColumn(name: "Notes", table: "Orders");
+        migrationBuilder.DropTable(name: "LegacyAudit");
+        migrationBuilder.CreateIndex(name: "IX_Orders_CustomerId", table: "Orders", column: "CustomerId");
+        migrationBuilder.AlterColumn<string>(name: "Status", table: "Orders");
+        migrationBuilder.AddColumn<string>(name: "Notes", table: "Orders");
+        
+        // Positional arguments are also supported
+        migrationBuilder.DropColumn("Notes", "Orders");
+        
+        // Suppression marker works correctly
+        // migration-safety:reviewed column is empty in every environment
+        migrationBuilder.DropColumn("Notes", "Orders");
+    }
+}
+```
+
+The test suite includes methods like `DropColumn_is_flagged`, `DropTable_is_flagged`, `CreateIndex_is_flagged`, `AlterColumn_is_flagged`, `Positional_arguments_are_understood`, `AddColumn_is_not_flagged`, `Reviewed_marker_suppresses_the_diagnostic`, and `Unrelated_type_named_similarly_is_ignored` to validate all analyzer rules.
+
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
