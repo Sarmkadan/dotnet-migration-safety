@@ -44,6 +44,12 @@ The analyzer honours that marker and stays quiet, and the justification stays in
 diff for the next reviewer. The bundled code fix ("Mark as reviewed") inserts the
 marker for you with a `TODO` placeholder for the reason.
 
+## Architecture
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the component breakdown, the
+key design decisions (type-name matching, comment-based suppression, warning-first
+severity) and how to add a new rule.
+
 ## Layout
 
 ```
