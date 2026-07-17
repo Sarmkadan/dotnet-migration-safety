@@ -9,36 +9,45 @@ namespace MigrationSafety.Analyzers.Tests
     public static class AnalyzerTestsValidation
     {
         /// <summary>
-        /// Validates that the analyzer tests instance is not null.
+        /// Validates an <see cref="AnalyzerTests"/> instance and returns a list of human-readable problems.
         /// </summary>
         /// <param name="value">The analyzer tests instance to validate.</param>
-        /// <returns>A list of validation problems; empty if valid.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
+        /// <returns>A read-only list of validation problems; empty if the tests instance is valid.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
         public static IReadOnlyList<string> Validate(this AnalyzerTests value)
         {
             ArgumentNullException.ThrowIfNull(value);
+
             return Array.Empty<string>();
         }
 
         /// <summary>
-        /// Determines whether the analyzer tests instance is valid.
+        /// Determines whether an <see cref="AnalyzerTests"/> instance is valid.
         /// </summary>
         /// <param name="value">The analyzer tests instance to check.</param>
-        /// <returns>True if valid; otherwise, false.</returns>
+        /// <returns><see langword="true"/> if the tests instance is valid; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
         public static bool IsValid(this AnalyzerTests value)
         {
-            return value != null;
+            return value is not null;
         }
 
         /// <summary>
-        /// Ensures that the analyzer tests instance is valid, throwing an exception if not.
+        /// Ensures that an <see cref="AnalyzerTests"/> instance is valid, throwing an exception if not.
         /// </summary>
         /// <param name="value">The analyzer tests instance to validate.</param>
-        /// <exception cref="ArgumentException">Thrown if <paramref name="value"/> is not valid.</exception>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The tests instance is not valid.</exception>
         public static void EnsureValid(this AnalyzerTests value)
         {
             ArgumentNullException.ThrowIfNull(value);
+
+            var problems = Validate(value);
+            if (problems.Count > 0)
+            {
+                throw new ArgumentException(
+                    $"AnalyzerTests instance is not valid. Problems:\n{string.Join("\n", problems)}");
+            }
         }
     }
 }
