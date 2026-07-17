@@ -23,10 +23,10 @@ namespace MigrationSafety.Analyzers.Tests
             ArgumentNullException.ThrowIfNull(tests);
 
             return tests.GetType()
-                        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-                        .Where(m => typeof(Task).IsAssignableFrom(m.ReturnType))
-                        .Select(m => m.Name)
-                        .ToArray();
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+                .Where(static m => typeof(Task).IsAssignableFrom(m.ReturnType))
+                .Select(static m => m.Name)
+                .ToArray();
         }
 
         /// <summary>
@@ -42,8 +42,9 @@ namespace MigrationSafety.Analyzers.Tests
             ArgumentNullException.ThrowIfNull(tests);
 
             foreach (var method in tests.GetType()
-                                        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-                                        .Where(m => typeof(Task).IsAssignableFrom(m.ReturnType)))
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+                .Where(static m => typeof(Task).IsAssignableFrom(m.ReturnType))
+                .Cast<MethodInfo>())
             {
                 var result = (Task)method.Invoke(tests, null)!;
                 await result.ConfigureAwait(false);
@@ -68,7 +69,7 @@ namespace MigrationSafety.Analyzers.Tests
             ArgumentException.ThrowIfNullOrEmpty(testName);
 
             var method = tests.GetType()
-                              .GetMethod(testName, BindingFlags.Instance | BindingFlags.Public);
+                .GetMethod(testName, BindingFlags.Instance | BindingFlags.Public);
 
             if (method is null || !typeof(Task).IsAssignableFrom(method.ReturnType))
                 return false;
