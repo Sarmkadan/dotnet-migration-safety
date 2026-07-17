@@ -26,22 +26,11 @@ namespace MigrationSafety.Analyzers
         /// <param name="indented">Whether to format the JSON with indentation.</param>
         /// <returns>A JSON string representation of the instance.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
-        public static string ToJson(this MarkReviewedCodeFixProvider value, bool indented = false)
+        public static string ToJson(this MarkReviewedCodeFixProvider value, bool indented = false) => value switch
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException(nameof(value));
-            }
-
-            var options = indented
-                ? new JsonSerializerOptions(_jsonOptions)
-                {
-                    WriteIndented = true
-                }
-                : _jsonOptions;
-
-            return JsonSerializer.Serialize(value, options);
-        }
+            null => throw new ArgumentNullException(nameof(value)),
+            _ => JsonSerializer.Serialize(value, indented ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true } : _jsonOptions)
+        };
 
         /// <summary>
         /// Deserializes a JSON string to a <see cref="MarkReviewedCodeFixProvider"/> instance.
@@ -50,20 +39,9 @@ namespace MigrationSafety.Analyzers
         /// <returns>The deserialized instance, or null if the JSON is invalid.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is empty or whitespace.</exception>
-        public static MarkReviewedCodeFixProvider? FromJson(string json)
-        {
-            if (json == null)
-            {
-                throw new ArgumentNullException(nameof(json));
-            }
-
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                throw new ArgumentException("Value cannot be empty or whitespace.", nameof(json));
-            }
-
-            return JsonSerializer.Deserialize<MarkReviewedCodeFixProvider>(json, _jsonOptions);
-        }
+        public static MarkReviewedCodeFixProvider? FromJson(string json) => string.IsNullOrWhiteSpace(json)
+            ? throw new ArgumentException("Invalid JSON input", nameof(json))
+            : JsonSerializer.Deserialize<MarkReviewedCodeFixProvider>(json, _jsonOptions);
 
         /// <summary>
         /// Attempts to deserialize a JSON string to a <see cref="MarkReviewedCodeFixProvider"/> instance.
