@@ -117,6 +117,49 @@ public class SomeMigration
 The test suite includes methods like `DropColumn_is_flagged`, `DropTable_is_flagged`, `CreateIndex_is_flagged`, `AlterColumn_is_flagged`, `Positional_arguments_are_understood`, `AddColumn_is_not_flagged`, `Reviewed_marker_suppresses_the_diagnostic`, and `Unrelated_type_named_similarly_is_ignored` to validate all analyzer rules.
 
 
+## OperationBuilder
+The `OperationBuilder<T>` class is used to construct database operations such as adding columns, creating indexes, altering columns, dropping columns, and dropping tables. It provides a fluent API for building migration operations with type safety.
+
+Example usage:
+```csharp
+using Microsoft.EntityFrameworkCore.Migrations;
+
+public class MyMigration : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        // Add a new column to the Orders table
+        migrationBuilder.OperationBuilder()
+            .AddColumn<string>(name: "Notes", table: "Orders")
+            .Nullable()
+            .ColumnType("nvarchar(max)");
+
+        // Create an index on the CustomerId column
+        migrationBuilder.OperationBuilder()
+            .CreateIndex(
+                name: "IX_Orders_CustomerId",
+                table: "Orders",
+                column: "CustomerId"
+            )
+            .IsUnique();
+
+        // Alter an existing column
+        migrationBuilder.OperationBuilder()
+            .AlterColumn<string>(name: "Status", table: "Orders")
+            .IsRequired();
+
+        // Drop a column
+        migrationBuilder.DropColumn(name: "LegacyField", table: "Orders");
+
+        // Drop a table
+        migrationBuilder.DropTable(name: "OldAuditLog");
+
+        // Execute raw SQL
+        migrationBuilder.OperationBuilder().Sql("UPDATE Orders SET Status = 'Active' WHERE Status IS NULL");
+    }
+}
+```
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
