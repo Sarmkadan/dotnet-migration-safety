@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace MigrationSafety.Analyzers.Tests
 {
@@ -9,23 +8,11 @@ namespace MigrationSafety.Analyzers.Tests
     public static class OperationBuilderExtensions
     {
         /// <summary>
-        /// Checks if the operation builder is null.
-        /// </summary>
-        /// <param name="operationBuilder">The operation builder to check.</param>
-        /// <returns>True if the operation builder is null, false otherwise.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if the operation builder is null.</exception>
-        public static bool IsNull(this OperationBuilder<object> operationBuilder)
-        {
-            ArgumentNullException.ThrowIfNull(operationBuilder);
-            return false;
-        }
-
-        /// <summary>
         /// Gets the type of the operation builder.
         /// </summary>
         /// <param name="operationBuilder">The operation builder to get the type of.</param>
         /// <returns>The type of the operation builder.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if the operation builder is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="operationBuilder"/> is null.</exception>
         public static Type GetType(this OperationBuilder<object> operationBuilder)
         {
             ArgumentNullException.ThrowIfNull(operationBuilder);
@@ -38,7 +25,7 @@ namespace MigrationSafety.Analyzers.Tests
         /// <param name="operationBuilder">The operation builder to check.</param>
         /// <param name="type">The type to check against.</param>
         /// <returns>True if the operation builder is of the specified type, false otherwise.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if the operation builder or type is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="operationBuilder"/> or <paramref name="type"/> is null.</exception>
         public static bool IsOfType(this OperationBuilder<object> operationBuilder, Type type)
         {
             ArgumentNullException.ThrowIfNull(operationBuilder);
@@ -51,7 +38,7 @@ namespace MigrationSafety.Analyzers.Tests
         /// </summary>
         /// <param name="operationBuilder">The operation builder to get a string representation of.</param>
         /// <returns>A string representation of the operation builder.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if the operation builder is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="operationBuilder"/> is null.</exception>
         public static string ToString(this OperationBuilder<object> operationBuilder)
         {
             ArgumentNullException.ThrowIfNull(operationBuilder);
