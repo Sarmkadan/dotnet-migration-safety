@@ -29,10 +29,7 @@ public static class OperationBuilderValidation
     /// <param name="value">The operation builder to check.</param>
     /// <returns><see langword="true"/> if the builder is valid; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
-    public static bool IsValid<T>(this OperationBuilder<T> value)
-    {
-        return Validate(value).Count == 0;
-    }
+    public static bool IsValid<T>(this OperationBuilder<T> value) => Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures that an <see cref="OperationBuilder{T}"/> instance is valid, throwing an exception if not.
