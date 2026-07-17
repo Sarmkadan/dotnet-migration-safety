@@ -26,3 +26,6 @@ coverage*.xml
 # OS junk
 .DS_Store
 Thumbs.db
+TestResults/
+BenchmarkDotNet.Artifacts/
+.aider*
