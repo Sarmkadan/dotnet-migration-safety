@@ -14,14 +14,8 @@ namespace MigrationSafety.Analyzers.Tests
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
 
-        private static JsonSerializerOptions GetJsonOptions(bool indented)
-        {
-            var options = new JsonSerializerOptions(_jsonOptions)
-            {
-                WriteIndented = indented,
-            };
-            return options;
-        }
+        private static JsonSerializerOptions GetJsonOptions(bool indented) =>
+            new(_jsonOptions) { WriteIndented = indented };
 
         /// <summary>
         /// Serializes the <see cref="AnalyzerTests"/> instance to a JSON string.
@@ -55,7 +49,7 @@ namespace MigrationSafety.Analyzers.Tests
         /// Attempts to deserialize an <see cref="AnalyzerTests"/> instance from a JSON string.
         /// </summary>
         /// <param name="json">The JSON string to deserialize.</param>
-        /// <param name="value">Receives the deserialized analyzer tests instance if successful.</param>
+        /// <param name="value">Receives the deserialized analyzer tests instance if successful; otherwise, null.</param>
         /// <returns>True if deserialization succeeded; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
         public static bool TryFromJson(string json, out AnalyzerTests? value)
