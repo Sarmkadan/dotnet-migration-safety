@@ -14,23 +14,27 @@ public class OperationBuilder<T>
 
 /// <summary>
 /// Provides JSON serialization and deserialization extensions for <see cref="OperationBuilder{T}"/>.
+/// This class is sealed as it contains only static utility methods.
 /// </summary>
 public static class OperationBuilderJsonExtensions
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
+        // Use camelCase for property names to match JavaScript/TypeScript conventions
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        // Compact JSON by default for better performance in tests
         WriteIndented = false,
+        // Skip null values during serialization to reduce payload size
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     /// <summary>
-    /// Serializes the <see cref="OperationBuilder{T}"/> to a JSON string.
+    /// Serializes the <see cref="OperationBuilder{T}"/> to a JSON string using camelCase property naming and invariant culture.
     /// </summary>
     /// <typeparam name="T">The operation type.</typeparam>
     /// <param name="value">The operation builder to serialize.</param>
     /// <param name="indented">Whether to format the JSON with indentation.</param>
-    /// <returns>The JSON representation of the operation builder.</returns>
+    /// <returns>A JSON string representation of the operation builder.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     public static string ToJson<T>(this OperationBuilder<T> value, bool indented = false)
     {
@@ -38,9 +42,7 @@ public static class OperationBuilderJsonExtensions
 
         var options = indented
             ? new JsonSerializerOptions(_jsonOptions)
-            {
-                WriteIndented = true,
-            }
+            { WriteIndented = true, }
             : _jsonOptions;
 
         return JsonSerializer.Serialize(value, options);
@@ -51,9 +53,9 @@ public static class OperationBuilderJsonExtensions
     /// </summary>
     /// <typeparam name="T">The operation type.</typeparam>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <returns>The deserialized operation builder, or <see langword="null"/> if the JSON is empty.</returns>
+    /// <returns>The deserialized operation builder, or <see langword="null"/> if the JSON is empty or whitespace.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="json"/> is <see langword="null"/>.</exception>
-    /// <exception cref="JsonException">The JSON is invalid or cannot be deserialized.</exception>
+    /// <exception cref="JsonException">The JSON is invalid, empty, whitespace, or cannot be deserialized into an <see cref="OperationBuilder{T}"/>.</exception>
     public static OperationBuilder<T>? FromJson<T>(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
@@ -67,7 +69,7 @@ public static class OperationBuilderJsonExtensions
     }
 
     /// <summary>
-    /// Attempts to deserialize an <see cref="OperationBuilder{T}"/> from a JSON string.
+    /// Attempts to deserialize an <see cref="OperationBuilder{T}"/> from a JSON string using camelCase property naming and invariant culture.
     /// </summary>
     /// <typeparam name="T">The operation type.</typeparam>
     /// <param name="json">The JSON string to deserialize.</param>
@@ -92,6 +94,7 @@ public static class OperationBuilderJsonExtensions
         }
         catch (JsonException)
         {
+            // Deserialization failed due to invalid JSON
             return false;
         }
     }
