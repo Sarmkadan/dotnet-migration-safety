@@ -24,11 +24,13 @@ namespace MigrationSafety.Analyzers
         private const string Title = "Mark as reviewed (migration-safety)";
 
         public override ImmutableArray<string> FixableDiagnosticIds { get; } =
-            ImmutableArray.Create(
-                DiagnosticIds.DropColumn,
-                DiagnosticIds.NonConcurrentIndex,
-                DiagnosticIds.TableRewrite,
-                DiagnosticIds.DropTable);
+        ImmutableArray.Create(
+            DiagnosticIds.DropColumn,
+            DiagnosticIds.NonConcurrentIndex,
+            DiagnosticIds.TableRewrite,
+            DiagnosticIds.DropTable,
+            DiagnosticIds.AddNotNullColumn,
+            DiagnosticIds.RenameColumn);
 
         public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -50,11 +52,19 @@ namespace MigrationSafety.Analyzers
                 return;
             }
 
+            // Register both leading and trailing comment fixes
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: Title,
-                    createChangedDocument: ct => MarkReviewedAsync(context.Document, statement, diagnostic.Id, ct),
-                    equivalenceKey: Title),
+                    title: Title + " (leading comment)",
+                    createChangedDocument: ct => MarkReviewedAsync(context.Document, statement, diagnostic.Id, ct, insertAsLeading: true),
+                    equivalenceKey: Title + ".Leading"),
+                diagnostic);
+
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title: Title + " (trailing comment)",
+                    createChangedDocument: ct => MarkReviewedAsync(context.Document, statement, diagnostic.Id, ct, insertAsLeading: false),
+                    equivalenceKey: Title + ".Trailing"),
                 diagnostic);
         }
 
@@ -62,7 +72,8 @@ namespace MigrationSafety.Analyzers
             Document document,
             StatementSyntax statement,
             string diagnosticId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool insertAsLeading = true)
         {
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             if (root == null)
@@ -70,6 +81,23 @@ namespace MigrationSafety.Analyzers
                 return document;
             }
 
+            if (insertAsLeading)
+            {
+                return await InsertLeadingCommentAsync(document, root, statement, diagnosticId, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                return await InsertTrailingCommentAsync(document, root, statement, diagnosticId, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task<Document> InsertLeadingCommentAsync(
+            Document document,
+            SyntaxNode root,
+            StatementSyntax statement,
+            string diagnosticId,
+            CancellationToken cancellationToken)
+        {
             var leading = statement.GetLeadingTrivia();
             var indent = leading.LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia));
 
@@ -86,6 +114,33 @@ namespace MigrationSafety.Analyzers
             }
 
             var newStatement = statement.WithLeadingTrivia(newLeading);
+            var newRoot = root.ReplaceNode(statement, newStatement);
+            return document.WithSyntaxRoot(newRoot);
+        }
+
+        private static async Task<Document> InsertTrailingCommentAsync(
+            Document document,
+            SyntaxNode root,
+            StatementSyntax statement,
+            string diagnosticId,
+            CancellationToken cancellationToken)
+        {
+            // Get the trailing trivia of the statement
+            var trailing = statement.GetTrailingTrivia();
+
+            // Create the comment with proper spacing
+            var comment = SyntaxFactory.Comment(" // " + SuppressionComment.Marker + " (" + diagnosticId + ") TODO: document why this is safe");
+
+            // Add the comment to the trailing trivia
+            var newTrailing = trailing.Add(comment);
+
+            // Ensure there's a newline after the statement
+            if (!newTrailing.Any(t => t.IsKind(SyntaxKind.EndOfLineTrivia)))
+            {
+                newTrailing = newTrailing.Add(SyntaxFactory.ElasticEndOfLine("\n"));
+            }
+
+            var newStatement = statement.WithTrailingTrivia(newTrailing);
             var newRoot = root.ReplaceNode(statement, newStatement);
             return document.WithSyntaxRoot(newRoot);
         }
