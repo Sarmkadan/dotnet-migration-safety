@@ -152,5 +152,25 @@ public class Caller
 }
 ");
         }
+
+        /// <summary>
+        /// Verifies that the analyzer flags a <c>RenameColumn</c> operation as unsafe, emitting the MIG006 diagnostic.
+        /// </summary>
+        [Fact]
+        public async Task RenameColumn_is_flagged()
+        {
+            await Verify.AnalyzerAsync(Wrap(
+                @"migrationBuilder.{|MIG006:RenameColumn|}(name: ""OldCol"", table: ""MyTable"", newName: ""NewCol"");"));
+        }
+
+        /// <summary>
+        /// Verifies that the analyzer flags a <c>RenameTable</c> operation as unsafe, emitting the MIG006 diagnostic.
+        /// </summary>
+        [Fact]
+        public async Task RenameTable_is_flagged()
+        {
+            await Verify.AnalyzerAsync(Wrap(
+                @"migrationBuilder.{|MIG006:RenameTable|}(name: ""OldTable"", newName: ""NewTable"");"));
+        }
     }
 }

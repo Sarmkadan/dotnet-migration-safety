@@ -20,7 +20,8 @@ namespace MigrationSafety.Analyzers
 				Descriptors.NonConcurrentIndex,
 				Descriptors.TableRewrite,
 				Descriptors.DropTable,
-				Descriptors.AddNotNullColumn);
+				Descriptors.AddNotNullColumn,
+                Descriptors.RenameColumn);
 
 		public override void Initialize(AnalysisContext context)
 		{
@@ -80,6 +81,14 @@ namespace MigrationSafety.Analyzers
 			case "AddColumn":
 				AnalyzeAddColumn(context, invocation, method, reportLocation);
 				break;
+
+            case "RenameColumn":
+                Report(context, invocation, method, Descriptors.RenameColumn, reportLocation, "name", "newName");
+                break;
+
+            case "RenameTable":
+                Report(context, invocation, method, Descriptors.RenameColumn, reportLocation, "name", "newName");
+                break;
 			}
 		}
 

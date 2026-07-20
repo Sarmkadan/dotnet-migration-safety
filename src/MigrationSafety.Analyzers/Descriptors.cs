@@ -59,5 +59,15 @@ namespace MigrationSafety.Analyzers
 			isEnabledByDefault: true,
 			description: "Adding a non-nullable column to a populated table without a default value will fail because the database cannot determine what value to use for existing rows. Either make the column nullable, add a default value, or use defaultValueSql to provide a SQL expression.",
 			helpLinkUri: HelpUriBase + "MIG005.md");
+
+        internal static readonly DiagnosticDescriptor RenameColumn = new DiagnosticDescriptor(
+            id: DiagnosticIds.RenameColumn,
+            title: "Rename operation breaks rolling deploys",
+            messageFormat: "Rename operation on '{0}' to '{1}' breaks rolling deploys - old app version still queries old name",
+            category: DiagnosticIds.Category,
+            defaultSeverity: DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "Renaming a column or table changes the schema name, which can break rolling deployments where older application versions still reference the previous name. Review and coordinate deployments carefully.",
+            helpLinkUri: HelpUriBase + "MIG006.md");
 	}
 }
