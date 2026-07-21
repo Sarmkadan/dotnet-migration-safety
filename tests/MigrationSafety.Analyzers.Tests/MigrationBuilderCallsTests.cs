@@ -45,8 +45,8 @@ public class TestClass
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(MigrationBuilderCalls).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(MigrationBuilderStub).Assembly.Location),
-                // Add reference to System.Runtime (required for .NET 5+)
-                MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location)
+                // Reference to System.Runtime (required for .NET 5+)
+                MetadataReference.CreateFromFile(typeof(System.Runtime.GCSettings).Assembly.Location)
             };
 
             var compilation = CSharpCompilation.Create(
@@ -99,8 +99,8 @@ public class TestClass
             {
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(MigrationBuilderCalls).Assembly.Location),
-                // System.Runtime reference for .NET 5+
-                MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location)
+                // Reference to System.Runtime (required for .NET 5+)
+                MetadataReference.CreateFromFile(typeof(System.Runtime.GCSettings).Assembly.Location)
             };
 
             var compilation = CSharpCompilation.Create(
