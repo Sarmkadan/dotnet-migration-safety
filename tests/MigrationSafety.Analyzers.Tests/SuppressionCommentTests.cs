@@ -39,7 +39,7 @@ public class SomeMigration
         }
 
         /// <summary>
-        /// Verifies that IsReviewed returns true when the marker comment uses different casing (uppercase).
+        /// Verifies that IsReviewed returns true when the marker uses different casing (uppercase).
         /// The method uses case-insensitive comparison.
         /// </summary>
         [Fact]
@@ -63,7 +63,7 @@ public class SomeMigration
         }
 
         /// <summary>
-        /// Verifies that IsReviewed returns true when the marker comment uses different casing (mixed case).
+        /// Verifies that IsReviewed returns true when the marker uses different casing (mixed case).
         /// The method uses case-insensitive comparison.
         /// </summary>
         [Fact]
@@ -254,6 +254,175 @@ public class SomeMigration
         }
 
         /// <summary>
+        /// Verifies that IsReviewed returns true when the marker has extra whitespace around the colon.
+        /// The parser should tolerate formatting drift from dotnet format or manual editing.
+        /// </summary>
+        [Fact]
+        public void IsReviewed_WithWhitespaceAroundColon_ReturnsTrue()
+        {
+            var source = @"
+using Microsoft.EntityFrameworkCore.Migrations;
+
+public class SomeMigration
+{
+    public void Up(MigrationBuilder migrationBuilder)
+    {
+        // migration-safety : reviewed safe to drop
+        migrationBuilder.DropColumn(name: ""Notes"", table: ""Orders"");
+    }
+}
+";
+
+            var result = TestSuppressionComment(source);
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that IsReviewed returns true when the marker has extra whitespace throughout.
+        /// Tests tolerance for multiple spaces, tabs, etc.
+        /// </summary>
+        [Fact]
+        public void IsReviewed_WithMultipleWhitespaceVariations_ReturnsTrue()
+        {
+            var source = @"
+using Microsoft.EntityFrameworkCore.Migrations;
+
+public class SomeMigration
+{
+    public void Up(MigrationBuilder migrationBuilder)
+    {
+        //    migration-safety   :   reviewed   (MIG001)   safe to drop column
+        migrationBuilder.DropColumn(name: ""Notes"", table: ""Orders"");
+    }
+}
+";
+
+            var result = TestSuppressionComment(source);
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that IsReviewed returns true when the marker uses parentheses with diagnostic ID.
+        /// This is the format that the code fix provider generates.
+        /// </summary>
+        [Fact]
+        public void IsReviewed_WithDiagnosticIdInParentheses_ReturnsTrue()
+        {
+            var source = @"
+using Microsoft.EntityFrameworkCore.Migrations;
+
+public class SomeMigration
+{
+    public void Up(MigrationBuilder migrationBuilder)
+    {
+        // migration-safety:reviewed (MIG001) TODO: document why this is safe
+        migrationBuilder.DropColumn(name: ""Notes"", table: ""Orders"");
+    }
+}
+";
+
+            var result = TestSuppressionComment(source);
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that IsReviewed returns true when the marker has lowercase letters.
+        /// Tests case-insensitive matching.
+        /// </summary>
+        [Fact]
+        public void IsReviewed_WithLowercaseMarker_ReturnsTrue()
+        {
+            var source = @"
+using Microsoft.EntityFrameworkCore.Migrations;
+
+public class SomeMigration
+{
+    public void Up(MigrationBuilder migrationBuilder)
+    {
+        // migration-safety:reviewed safe to drop
+        migrationBuilder.DropColumn(name: ""Notes"", table: ""Orders"");
+    }
+}
+";
+
+            var result = TestSuppressionComment(source);
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that IsReviewed returns true when using multi-line comment with variations.
+        /// Tests that multi-line comments also support formatting tolerance.
+        /// </summary>
+        [Fact]
+        public void IsReviewed_WithMultiLineCommentVariations_ReturnsTrue()
+        {
+            var source = @"
+using Microsoft.EntityFrameworkCore.Migrations;
+
+public class SomeMigration
+{
+    public void Up(MigrationBuilder migrationBuilder)
+    {
+        /* MIGRATION-SAFETY : REVIEWED (mig001) */
+        migrationBuilder.DropColumn(name: ""Notes"", table: ""Orders"");
+    }
+}
+";
+
+            var result = TestSuppressionComment(source);
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that IsReviewed returns true when the marker has trailing reviewer information.
+        /// Tests that additional text after the marker is accepted.
+        /// </summary>
+        [Fact]
+        public void IsReviewed_WithTrailingReviewerInfo_ReturnsTrue()
+        {
+            var source = @"
+using Microsoft.EntityFrameworkCore.Migrations;
+
+public class SomeMigration
+{
+    public void Up(MigrationBuilder migrationBuilder)
+    {
+        // migration-safety:reviewed reviewed by Alice on 2024-01-15
+        migrationBuilder.DropColumn(name: ""Notes"", table: ""Orders"");
+    }
+}
+";
+
+            var result = TestSuppressionComment(source);
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that IsReviewed returns true when the marker has extra text in parentheses.
+        /// Tests various formats that might be used by developers.
+        /// </summary>
+        [Fact]
+        public void IsReviewed_WithExtraParenthesesContent_ReturnsTrue()
+        {
+            var source = @"
+using Microsoft.EntityFrameworkCore.Migrations;
+
+public class SomeMigration
+{
+    public void Up(MigrationBuilder migrationBuilder)
+    {
+        // migration-safety:reviewed (MIG001:DropColumn) safe operation
+        migrationBuilder.DropColumn(name: ""Notes"", table: ""Orders"");
+    }
+}
+";
+
+            var result = TestSuppressionComment(source);
+            Assert.True(result);
+        }
+
+
+        /// <summary>
         /// Helper method to test SuppressionComment.IsReviewed with a given source code.
         /// </summary>
         /// <param name="source">The source code containing the migration</param>
@@ -279,7 +448,7 @@ public class SomeMigration
 
             if (invocation == null)
             {
-                throw new System.InvalidOperationException("Could not find invocation");
+                throw new InvalidOperationException("Could not find invocation");
             }
 
             return SuppressionComment.IsReviewed(invocation);
