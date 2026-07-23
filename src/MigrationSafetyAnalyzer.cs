@@ -1,0 +1,1 @@
+src/MigrationSafetyAnalyzer.cs
