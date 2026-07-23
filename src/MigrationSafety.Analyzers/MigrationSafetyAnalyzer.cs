@@ -83,7 +83,11 @@ namespace MigrationSafety.Analyzers
                     break;
 
                 case "CreateIndex":
-                    Report(context, invocation, method, Descriptors.NonConcurrentIndex, reportLocation, "name", "table");
+                    // Skip diagnostic if the index is created online/concurrently
+                    if (!MigrationBuilderCalls.HasOnlineIndexAnnotation(invocation, context.SemanticModel))
+                    {
+                        Report(context, invocation, method, Descriptors.NonConcurrentIndex, reportLocation, "name", "table");
+                    }
                     break;
 
                 case "AlterColumn":
@@ -190,7 +194,7 @@ namespace MigrationSafety.Analyzers
             // In Roslyn analyzers, we can check additional files or use analyzer config
             // For now, we'll implement a simple check that can be extended with proper config
             // The actual implementation would use context.Options.AnalyzerConfigOptionsProvider
-            // For this implementation, we'll assume the default behavior is to exclude Down()
+            // For the MVP, we'll assume the default behavior is to exclude Down()
 
             // This method is a placeholder that can be extended with proper configuration
             // For the MVP, we'll return false to exclude Down() by default as requested
