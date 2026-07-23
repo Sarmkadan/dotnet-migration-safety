@@ -91,7 +91,7 @@ namespace MigrationSafety.Analyzers
                     break;
 
                 case "AlterColumn":
-                    Report(context, invocation, method, Descriptors.TableRewrite, reportLocation, "name", "table");
+			AnalyzeAlterColumn(context, invocation, method, reportLocation);
                     break;
 
                 case "AddColumn":
@@ -199,6 +199,124 @@ namespace MigrationSafety.Analyzers
             // This method is a placeholder that can be extended with proper configuration
             // For the MVP, we'll return false to exclude Down() by default as requested
             return false;
+        }
+
+        private static void AnalyzeAlterColumn(
+            SyntaxNodeAnalysisContext context,
+            InvocationExpressionSyntax invocation,
+            IMethodSymbol method,
+            Location reportLocation)
+        {
+            // Analyze the parameters to determine the appropriate severity
+            var diagnostic = AnalyzeAlterColumnParameters(invocation, method, context, reportLocation);
+
+            context.ReportDiagnostic(diagnostic);
+        }
+
+        private static Diagnostic AnalyzeAlterColumnParameters(
+            InvocationExpressionSyntax invocation,
+            IMethodSymbol method,
+            SyntaxNodeAnalysisContext context,
+            Location reportLocation)
+        {
+            // Analyze nullable parameter
+            var nullableDiagnostic = AnalyzeNullableChange(invocation, method, context, reportLocation);
+            if (nullableDiagnostic != null)
+            {
+                return nullableDiagnostic;
+            }
+
+            // Analyze type narrowing (maxLength, precision, scale)
+            var typeNarrowingDiagnostic = AnalyzeTypeNarrowing(invocation, method, context, reportLocation);
+            if (typeNarrowingDiagnostic != null)
+            {
+                return typeNarrowingDiagnostic;
+            }
+
+            // Default to warning for other AlterColumn changes
+            var first = MigrationBuilderCalls.GetStringArgument(invocation, method, "name") ?? "?";
+            var second = MigrationBuilderCalls.GetStringArgument(invocation, method, "table") ?? "?";
+            return Diagnostic.Create(Descriptors.TableRewrite, reportLocation, first, second);
+        }
+
+        private static Diagnostic? AnalyzeNullableChange(
+            InvocationExpressionSyntax invocation,
+            IMethodSymbol method,
+            SyntaxNodeAnalysisContext context,
+            Location reportLocation)
+        {
+            var nullableArg = MigrationBuilderCalls.GetNamedArgument(invocation, method, "nullable");
+            if (nullableArg == null)
+            {
+                return null; // No nullable parameter change
+            }
+
+            // Check if the nullable argument is a literal
+            if (nullableArg.Expression is LiteralExpressionSyntax literal)
+            {
+                var newNullable = literal.Token.Value as bool?;
+                if (newNullable.HasValue)
+                {
+                    // For now, we'll use a simplified approach:
+                    // - If nullable is explicitly set to false, it's a narrowing operation (Warning)
+                    // - If nullable is explicitly set to true, it's a widening operation (Info)
+                    // - If nullable is not specified, we can't determine the change
+
+                    var first = MigrationBuilderCalls.GetStringArgument(invocation, method, "name") ?? "?";
+                    var second = MigrationBuilderCalls.GetStringArgument(invocation, method, "table") ?? "?";
+
+                    if (newNullable == false)
+                    {
+                        // false -> narrowing, data loss risk - Warning
+                        return Diagnostic.Create(Descriptors.TableRewrite, invocation.GetLocation(), first, second);
+                    }
+                    else if (newNullable == true)
+                    {
+                        // true -> widening, safe operation - Info
+                        var descriptor = new DiagnosticDescriptor(
+                            id: DiagnosticIds.TableRewrite,
+                            title: Descriptors.TableRewrite.Title,
+                            messageFormat: Descriptors.TableRewrite.MessageFormat,
+                            category: DiagnosticIds.Category,
+                            defaultSeverity: DiagnosticSeverity.Info,
+                            isEnabledByDefault: Descriptors.TableRewrite.IsEnabledByDefault,
+                            description: "Making a column nullable is a safe operation that doesn't rewrite table data.",
+                            helpLinkUri: Descriptors.TableRewrite.HelpLinkUri);
+                        return Diagnostic.Create(descriptor, invocation.GetLocation(), first, second);
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static Diagnostic? AnalyzeTypeNarrowing(
+            InvocationExpressionSyntax invocation,
+            IMethodSymbol method,
+            SyntaxNodeAnalysisContext context,
+            Location reportLocation)
+        {
+            // Check for maxLength narrowing
+            var maxLengthArg = MigrationBuilderCalls.GetNamedArgument(invocation, method, "maxLength");
+            if (maxLengthArg != null)
+            {
+                if (maxLengthArg.Expression is LiteralExpressionSyntax maxLengthLiteral)
+                {
+                    var maxLengthValue = maxLengthLiteral.Token.Value as int?;
+                    if (maxLengthValue.HasValue && maxLengthValue.Value >= 0)
+                    {
+                        // Type narrowing detected - Warning level
+                        var first = MigrationBuilderCalls.GetStringArgument(invocation, method, "name") ?? "?";
+                        var second = MigrationBuilderCalls.GetStringArgument(invocation, method, "table") ?? "?";
+                        return Diagnostic.Create(Descriptors.TableRewrite, invocation.GetLocation(), first, second);
+                    }
+                }
+            }
+
+            // Check for type parameter narrowing (e.g., decimal precision/scale changes)
+            // This would require more sophisticated analysis in a real implementation
+
+            return null;
         }
 
         private static void AnalyzeAddColumn(
