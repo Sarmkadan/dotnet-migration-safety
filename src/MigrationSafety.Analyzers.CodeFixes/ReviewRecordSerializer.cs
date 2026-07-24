@@ -11,8 +11,7 @@ namespace MigrationSafety.Analyzers
     /// <remarks>
     /// Dates are always written and read in the round-trippable, culture-invariant
     /// <c>"O"</c> format (<see cref="DateTime.ToString(string, IFormatProvider)"/> with
-    /// <see cref="CultureInfo.InvariantCulture"/>), so a machine whose OS culture is, for
-    /// example, <c>bg-BG</c> can never write a locale-formatted date such as
+    /// <see cref="CultureInfo.InvariantCulture"/>), so a machine whose OS culture is, for example, <c>bg-BG</c> can never write a locale-formatted date such as
     /// <c>22.07.2026</c> into a suppression comment or report. Property casing is fixed to
     /// camelCase regardless of host culture or reflection order. Every payload carries a
     /// <c>schemaVersion</c> field so comments written under an older shape of
@@ -20,11 +19,19 @@ namespace MigrationSafety.Analyzers
     /// </remarks>
     public static class ReviewRecordSerializer
     {
+        // Security: Maximum allowed JSON payload size in bytes to prevent memory exhaustion attacks
+        private const int MaxJsonPayloadSize = 8 * 1024; // 8 KB
+
+        // Security: Maximum JSON nesting depth to prevent stack overflow from depth bombs
+        private const int MaxJsonDepth = 32;
+
         private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = false,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            // Security: Set maximum depth to prevent DoS via deeply nested JSON
+            MaxDepth = MaxJsonDepth,
         };
 
         /// <summary>
@@ -33,6 +40,7 @@ namespace MigrationSafety.Analyzers
         /// <param name="record">The record to serialize.</param>
         /// <returns>A JSON string representation of <paramref name="record"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="record"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when the serialized JSON exceeds size limits.</exception>
         public static string Serialize(ReviewRecord record)
         {
             if (record == null)
@@ -49,7 +57,17 @@ namespace MigrationSafety.Analyzers
                 MigrationFile = record.MigrationFile,
             };
 
-            return JsonSerializer.Serialize(dto, Options);
+            var json = JsonSerializer.Serialize(dto, Options);
+
+            // Security: Validate serialized size doesn't exceed limits
+            if (json.Length > MaxJsonPayloadSize)
+            {
+                throw new InvalidOperationException(
+                    $"Serialized review record exceeds maximum allowed size of {MaxJsonPayloadSize} bytes. " +
+                    "This may indicate a corrupted or maliciously crafted record.");
+            }
+
+            return json;
         }
 
         /// <summary>
@@ -59,12 +77,21 @@ namespace MigrationSafety.Analyzers
         /// <param name="json">The JSON string to deserialize.</param>
         /// <returns>The deserialized <see cref="ReviewRecord"/>.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null, empty, or whitespace.</exception>
-        /// <exception cref="JsonException">Thrown when <paramref name="json"/> is not valid JSON or is missing required fields.</exception>
+        /// <exception cref="JsonException">Thrown when <paramref name="json"/> is not valid JSON, exceeds size limits, or is missing required fields.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the JSON payload exceeds maximum depth or size limits.</exception>
         public static ReviewRecord Deserialize(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
             {
                 throw new ArgumentException("Value cannot be null, empty, or whitespace.", nameof(json));
+            }
+
+            // Security: Validate size before deserialization to prevent memory exhaustion
+            if (json.Length > MaxJsonPayloadSize)
+            {
+                throw new InvalidOperationException(
+                    $"JSON payload exceeds maximum allowed size of {MaxJsonPayloadSize} bytes. " +
+                    "This may indicate a corrupted or maliciously crafted record.");
             }
 
             var dto = JsonSerializer.Deserialize<ReviewRecordDto>(json, Options)
@@ -94,6 +121,7 @@ namespace MigrationSafety.Analyzers
         /// <param name="json">The JSON string to deserialize.</param>
         /// <param name="record">Receives the deserialized <see cref="ReviewRecord"/> on success, or null on failure.</param>
         /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
         public static bool TryDeserialize(string? json, out ReviewRecord? record)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -118,6 +146,11 @@ namespace MigrationSafety.Analyzers
                 return false;
             }
             catch (FormatException)
+            {
+                record = null;
+                return false;
+            }
+            catch (InvalidOperationException)
             {
                 record = null;
                 return false;
