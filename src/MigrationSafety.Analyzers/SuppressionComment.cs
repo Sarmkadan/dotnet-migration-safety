@@ -79,6 +79,51 @@ namespace MigrationSafety.Analyzers
         }
 
         /// <summary>
+        /// Recovers the free-text payload that follows the <c>migration-safety:reviewed</c> marker
+        /// (and its optional parenthesised rule-id list) in the leading comment trivia of the
+        /// statement containing <paramref name="node"/>. Used by consumers that embed structured
+        /// review metadata - such as a serialized review record - in that trailing text.
+        /// </summary>
+        /// <param name="node">The syntax node whose enclosing statement is inspected for a review marker comment.</param>
+        /// <param name="payload">Receives the trimmed trailing text on success, or null on failure.</param>
+        /// <returns>True if a review marker comment was found; otherwise, false.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="node"/> is null.</exception>
+        public static bool TryGetReviewedPayload(SyntaxNode node, out string? payload)
+        {
+            if (node == null)
+            {
+                throw new ArgumentNullException(nameof(node));
+            }
+
+            var statement = node.FirstAncestorOrSelf<StatementSyntax>();
+            if (statement == null)
+            {
+                payload = null;
+                return false;
+            }
+
+            foreach (var trivia in statement.GetLeadingTrivia())
+            {
+                if (!trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) &&
+                    !trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))
+                {
+                    continue;
+                }
+
+                var content = ExtractCommentContent(trivia.ToString());
+                var match = MarkerPattern.Match(content);
+                if (match.Success)
+                {
+                    payload = match.Groups[2].Value.Trim();
+                    return true;
+                }
+            }
+
+            payload = null;
+            return false;
+        }
+
+        /// <summary>
         /// Extracts the actual comment content from comment trivia, handling both single-line
         /// and multi-line comment syntax.
         /// </summary>
