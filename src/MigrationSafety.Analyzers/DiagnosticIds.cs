@@ -12,6 +12,7 @@ namespace MigrationSafety.Analyzers
         public const string DropTable = "MIG004";
         public const string AddNotNullColumn = "MIG005";
         public const string RenameColumn = "MIG006";
+public const string UnreviewedSuppression = "MIG999";
 
         public const string Category = "MigrationSafety";
     }
