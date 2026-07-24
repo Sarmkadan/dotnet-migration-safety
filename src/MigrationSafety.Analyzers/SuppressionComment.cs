@@ -16,10 +16,10 @@ namespace MigrationSafety.Analyzers
     ///
     /// Accepted grammar (case-insensitive, whitespace-tolerant):
     /// <list type="bullet">
-    ///   <item><c>// migration-safety:reviewed</c> followed by any text</item>
-    ///   <item><c>/* migration-safety:reviewed ... */</c> containing any text</item>
-    ///   <item>Any whitespace variations around colons, parentheses, and keywords</item>
-    ///   <item>Trailing text such as reviewer names, dates, or additional notes</item>
+    /// <item><c>// migration-safety:reviewed</c> followed by any text</item>
+    /// <item><c>/* migration-safety:reviewed ... */</c> containing any text</item>
+    /// <item>Any whitespace variations around colons, parentheses, and keywords</item>
+    /// <item>Trailing text such as reviewer names, dates, or additional notes</item>
     /// </list>
     ///
     /// Examples of accepted formats:
@@ -34,6 +34,9 @@ namespace MigrationSafety.Analyzers
     /// </summary>
     public static class SuppressionComment
     {
+        /// <summary>
+        /// The suppression marker text that must appear in the comment.
+        /// </summary>
         public const string Marker = "migration-safety:reviewed";
 
         // Case-insensitive, whitespace-tolerant regex pattern for the marker
@@ -42,6 +45,18 @@ namespace MigrationSafety.Analyzers
             @"migration\s*-?\s*safety\s*:\s*reviewed\s*(\([^)]*\))?\s*(.*)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+        /// <summary>
+        /// Determines whether the specified syntax node has a leading comment containing the
+        /// migration-safety review marker.
+        /// </summary>
+        /// <param name="node">The syntax node to check for a suppression comment.</param>
+        /// <returns>
+        /// <see langword="true" /> if the node has a leading comment containing the
+        /// migration-safety:reviewed marker; otherwise, <see langword="false" />.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="node" /> is <see langword="null" />.
+        /// </exception>
         public static bool IsReviewed(SyntaxNode node)
         {
             if (node == null)
@@ -68,10 +83,24 @@ namespace MigrationSafety.Analyzers
                 // Extract comment content (remove leading // or /* and trailing */)
                 string content = ExtractCommentContent(commentText);
 
-                // Check if the content matches the marker pattern (case-insensitive, whitespace-tolerant)
-                if (MarkerPattern.IsMatch(content))
+                // Validate input length to prevent memory exhaustion attacks
+                if (content.Length > InputValidation.MaxCommentLength)
                 {
-                    return true;
+                    return false;
+                }
+
+                // Check if the content matches the marker pattern (case-insensitive, whitespace-tolerant)
+                try
+                {
+                    if (MarkerPattern.IsMatch(content))
+                    {
+                        return true;
+                    }
+                }
+                catch (RegexMatchTimeoutException)
+                {
+                    // Timeout occurred during matching - treat as no match
+                    return false;
                 }
             }
 
@@ -85,9 +114,13 @@ namespace MigrationSafety.Analyzers
         /// review metadata - such as a serialized review record - in that trailing text.
         /// </summary>
         /// <param name="node">The syntax node whose enclosing statement is inspected for a review marker comment.</param>
-        /// <param name="payload">Receives the trimmed trailing text on success, or null on failure.</param>
-        /// <returns>True if a review marker comment was found; otherwise, false.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="node"/> is null.</exception>
+        /// <param name="payload">Receives the trimmed trailing text on success, or <see langword="null" /> on failure.</param>
+        /// <returns>
+        /// <see langword="true" /> if a review marker comment was found; otherwise, <see langword="false" />.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="node" /> is <see langword="null" />.
+        /// </exception>
         public static bool TryGetReviewedPayload(SyntaxNode node, out string? payload)
         {
             if (node == null)
@@ -111,11 +144,28 @@ namespace MigrationSafety.Analyzers
                 }
 
                 var content = ExtractCommentContent(trivia.ToString());
-                var match = MarkerPattern.Match(content);
-                if (match.Success)
+
+                // Validate input length to prevent memory exhaustion attacks
+                if (content.Length > InputValidation.MaxCommentLength)
                 {
-                    payload = match.Groups[2].Value.Trim();
-                    return true;
+                    payload = null;
+                    return false;
+                }
+
+                try
+                {
+                    var match = MarkerPattern.Match(content);
+                    if (match.Success)
+                    {
+                        payload = match.Groups[1].Value.Trim();
+                        return true;
+                    }
+                }
+                catch (RegexMatchTimeoutException)
+                {
+                    // Timeout occurred during matching - treat as no match
+                    payload = null;
+                    return false;
                 }
             }
 
@@ -127,8 +177,8 @@ namespace MigrationSafety.Analyzers
         /// Extracts the actual comment content from comment trivia, handling both single-line
         /// and multi-line comment syntax.
         /// </summary>
-        /// <param name="commentText">The full comment text including // or /* */ markers</param>
-        /// <returns>The extracted content without comment delimiters</returns>
+        /// <param name="commentText">The full comment text including // or /* */ markers.</param>
+        /// <returns>The extracted content without comment delimiters.</returns>
         private static string ExtractCommentContent(string commentText)
         {
             if (string.IsNullOrEmpty(commentText))
@@ -151,6 +201,17 @@ namespace MigrationSafety.Analyzers
 
             // Fallback: return as-is
             return commentText.Trim();
+        }
+
+        /// <summary>
+        /// Constants for input validation to prevent ReDoS and excessive memory usage.
+        /// </summary>
+        private static class InputValidation
+        {
+            /// <summary>
+            /// Maximum allowed length for comment content to prevent memory exhaustion attacks.
+            /// </summary>
+            public const int MaxCommentLength = 1024 * 1024; // 1 MB
         }
     }
 }
