@@ -3,7 +3,7 @@
 A Roslyn analyzer that flags destructive or lock-heavy EF Core migrations at build
 time, before they reach production. It reads the `migrationBuilder.*` calls in your
 generated migration files and warns on the operations that most often cause outages
-or data loss.
+and data loss.
 
 ## Rules
 
@@ -116,9 +116,8 @@ public class SomeMigration
 
 The test suite includes methods like `DropColumn_is_flagged`, `DropTable_is_flagged`, `CreateIndex_is_flagged`, `AlterColumn_is_flagged`, `Positional_arguments_are_understood`, `AddColumn_is_not_flagged`, `Reviewed_marker_suppresses_the_diagnostic`, and `Unrelated_type_named_similarly_is_ignored` to validate all analyzer rules.
 
-
 ## OperationBuilder
-The `OperationBuilder<T>` class is used to construct database operations such as adding columns, creating indexes, altering columns, dropping columns, and dropping tables. It provides a fluent API for building migration operations with type safety.
+The `OperationBuilder<T>` class is used to construct database operations such such as adding columns, creating indexes, altering columns, dropping columns, and dropping tables. It provides a fluent API for building migration operations with type safety.
 
 Example usage:
 ```csharp
@@ -163,3 +162,32 @@ public class MyMigration : Migration
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## SuppressionCommentTests
+
+The `SuppressionCommentTests` class contains unit tests that verify the behavior of the `SuppressionComment` helper, ensuring it correctly detects review markers in various comment styles and placements within generated migration code. Each test method exercises a different scenario, such as comments on the line above, uppercase markers, mixed‑case markers, and multi‑line comments.
+
+```csharp
+using MigrationSafety.Analyzers;
+using MigrationSafety.Analyzers.Tests;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+public class SuppressionCommentDemo
+{
+    public void Run()
+    {
+        var tests = new SuppressionCommentTests();
+
+        // Run a specific test scenario
+        tests.IsReviewed_WithCommentOnLineAbove_ReturnsTrue();
+
+        // Obtain a statement syntax node from the test helper
+        StatementSyntax stmt = tests.Up();
+
+        // Check whether the statement is considered reviewed
+        bool isReviewed = SuppressionComment.IsReviewed(stmt);
+    }
+}
+```
+
+The demo shows how the public members of `SuppressionCommentTests` can be used to drive the same logic that the test suite validates, providing a clear example of the API in action. 
