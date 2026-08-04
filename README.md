@@ -159,6 +159,34 @@ public class MyMigration : Migration
 }
 ```
 
+## MarkReviewedCodeFixProviderTests
+
+The `MarkReviewedCodeFixProviderTests` class contains unit tests verifying the correctness of the `MarkReviewedCodeFixProvider`. It ensures the provider correctly identifies fixable diagnostic IDs, supports the required `FixAllProvider`, and adheres to expected behavioral constraints, such as ensuring diagnostic ID sets are immutable and unique.
+
+```csharp
+using MigrationSafety.Analyzers;
+using MigrationSafety.Analyzers.Tests;
+using Xunit;
+
+public class MarkReviewedCodeFixProviderDemo
+{
+    public void Run()
+    {
+        var tests = new MarkReviewedCodeFixProviderTests();
+
+        // Validate the provider functionality
+        tests.FixableDiagnosticIds_ReturnsExpectedDiagnostics();
+        tests.GetFixAllProvider_ReturnsValidProvider();
+        tests.FixableDiagnosticIds_IsImmutable();
+        tests.FixableDiagnosticIds_ReturnsSameDiagnosticIds();
+        tests.ProviderName_MatchesExpected();
+        tests.Provider_IsShared();
+        tests.FixableDiagnosticIds_DoesNotContainNull();
+        tests.FixableDiagnosticIds_ContainsUniqueValues();
+    }
+}
+```
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
