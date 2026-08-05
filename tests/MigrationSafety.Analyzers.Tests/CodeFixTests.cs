@@ -22,6 +22,7 @@ public class SomeMigration
 {
     public void Up(MigrationBuilder migrationBuilder)
     {
+        ArgumentNullException.ThrowIfNull(migrationBuilder);
         migrationBuilder.{|MIG001:DropColumn|}(name: ""Notes"", table: ""Orders"");
     }
 }
