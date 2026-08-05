@@ -16,12 +16,40 @@ namespace Microsoft.EntityFrameworkCore.Migrations
     public class AlterColumnOperation { }
     public class MigrationBuilder
     {
-        public OperationBuilder<AddColumnOperation> AddColumn<TColumn>(string name, string table) => null;
-        public object DropColumn(string name, string table) => null;
-        public object DropTable(string name) => null;
-        public OperationBuilder<CreateIndexOperation> CreateIndex(string name, string table, string column) => null;
-        public OperationBuilder<AlterColumnOperation> AlterColumn<TColumn>(string name, string table) => null;
-        public void Sql(string sql) { }
+        public OperationBuilder<AddColumnOperation> AddColumn<TColumn>(string name, string table)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name);
+            ArgumentException.ThrowIfNullOrEmpty(table);
+            return null;
+        }
+        public object DropColumn(string name, string table)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name);
+            ArgumentException.ThrowIfNullOrEmpty(table);
+            return null;
+        }
+        public object DropTable(string name)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name);
+            return null;
+        }
+        public OperationBuilder<CreateIndexOperation> CreateIndex(string name, string table, string column)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name);
+            ArgumentException.ThrowIfNullOrEmpty(table);
+            ArgumentException.ThrowIfNullOrEmpty(column);
+            return null;
+        }
+        public OperationBuilder<AlterColumnOperation> AlterColumn<TColumn>(string name, string table)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name);
+            ArgumentException.ThrowIfNullOrEmpty(table);
+            return null;
+        }
+        public void Sql(string sql)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(sql);
+        }
     }
 }
 ";
