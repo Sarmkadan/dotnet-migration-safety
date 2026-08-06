@@ -197,7 +197,31 @@ var provider = new MarkReviewedCodeFixProvider();
 var json = provider.ToJson();
 var deserializedProvider = MarkReviewedCodeFixProviderJsonExtensions.FromJson(json);
 ```
+
+## MigrationBuilderCallsTests
+
+The `MigrationBuilderCallsTests` class contains unit tests that verify `MigrationBuilderCalls.IsMigrationBuilderMethod` correctly identifies EF Core `MigrationBuilder` methods while ignoring identically named methods on unrelated types. These tests utilize Roslyn to compile small code snippets and inspect the resulting semantic model to ensure accurate detection.
+
+Here is an example showing how to invoke these test methods:
+
+```csharp
+public class MigrationBuilderCallsTestsDemo
+{
+    public void Test()
+    {
+        var tests = new MigrationBuilderCallsTests();
+
+        // Verify that MigrationBuilder methods are correctly recognized
+        tests.MigrationBuilderMethod_is_recognized();
+
+        // Verify that identically-named methods on unrelated types are not recognized
+        tests.UnrelatedMethod_is_not_recognized();
+    }
+}
+```
+
 ## License
+
 
 MIT. See [LICENSE](LICENSE).
 
