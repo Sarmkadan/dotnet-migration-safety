@@ -187,6 +187,16 @@ public class MarkReviewedCodeFixProviderDemo
 }
 ```
 
+## MarkReviewedCodeFixProviderJsonExtensionsTests
+
+The `MarkReviewedCodeFixProviderJsonExtensionsTests` class contains unit tests for JSON serialization and deserialization of `MarkReviewedCodeFixProvider` instances. It verifies the correctness of `ToJson` and `FromJson` methods, including happy path scenarios and error handling for null or empty inputs.
+
+Here's an example of how to use the `ToJson` and `FromJson` methods:
+```csharp
+var provider = new MarkReviewedCodeFixProvider();
+var json = provider.ToJson();
+var deserializedProvider = MarkReviewedCodeFixProviderJsonExtensions.FromJson(json);
+```
 ## License
 
 MIT. See [LICENSE](LICENSE).
