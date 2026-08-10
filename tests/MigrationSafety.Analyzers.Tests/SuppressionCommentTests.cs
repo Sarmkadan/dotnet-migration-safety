@@ -429,6 +429,7 @@ public class SomeMigration
         /// <returns>True if the suppression comment is detected, false otherwise</returns>
         private static bool TestSuppressionComment(string source)
         {
+            ArgumentException.ThrowIfNullOrEmpty(source);
             var tree = CSharpSyntaxTree.ParseText(MigrationBuilderStub.Source + source);
             var compilation = CSharpCompilation.Create("TestAssembly")
                 .WithReferences(new[]
