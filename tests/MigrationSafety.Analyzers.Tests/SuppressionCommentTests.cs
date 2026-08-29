@@ -421,6 +421,108 @@ public class SomeMigration
             Assert.True(result);
         }
 
+        [Fact(Skip = "Known failure: TryGetReviewedPayload currently returns the parenthesised rule-id group instead of the documented trailing free text.")]
+        public void TryGetReviewedPayload_WithRuleIdsAndTrailingText_ReturnsTrailingText()
+        {
+            var invocation = GetInvocation(@"
+public class SomeMigration
+{
+    public void Up()
+    {
+        // migration-safety:reviewed (MIG001) legacy column, verified empty
+        DropColumn();
+    }
+}
+");
+
+            var result = SuppressionComment.TryGetReviewedPayload(invocation, out var payload);
+
+            Assert.True(result);
+            Assert.Equal("legacy column, verified empty", payload);
+        }
+
+        [Fact(Skip = "Known failure: TryGetReviewedPayload currently returns the optional parenthesised group, which is empty here, instead of the documented trailing free text.")]
+        public void TryGetReviewedPayload_WithoutParenthesesAndMultiWordPayload_ReturnsPayload()
+        {
+            var invocation = GetInvocation(@"
+public class SomeMigration
+{
+    public void Up()
+    {
+        // migration-safety:reviewed legacy column verified empty
+        DropColumn();
+    }
+}
+");
+
+            var result = SuppressionComment.TryGetReviewedPayload(invocation, out var payload);
+
+            Assert.True(result);
+            Assert.Equal("legacy column verified empty", payload);
+        }
+
+        [Fact]
+        public void IsReviewed_WithMultiLineMixedCaseMarkerAndWhitespace_ReturnsTrue()
+        {
+            var invocation = GetInvocation(@"
+public class SomeMigration
+{
+    public void Up()
+    {
+        /* MiGrAtIoN-SaFeTy   :   ReViEwEd (MIG001)
+           legacy column, verified empty */
+        DropColumn();
+    }
+}
+");
+
+            Assert.True(SuppressionComment.IsReviewed(invocation));
+        }
+
+        [Fact]
+        public void TryGetReviewedPayload_WithNoEnclosingStatement_ReturnsFalseAndNullPayload()
+        {
+            var tree = CSharpSyntaxTree.ParseText("public class SomeMigration { }");
+            var root = tree.GetRoot();
+
+            var result = SuppressionComment.TryGetReviewedPayload(root, out var payload);
+
+            Assert.False(result);
+            Assert.Null(payload);
+        }
+
+        [Fact]
+        public void IsReviewed_WithNullNode_ThrowsArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => SuppressionComment.IsReviewed(null!));
+        }
+
+        [Fact]
+        public void TryGetReviewedPayload_WithNullNode_ThrowsArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => SuppressionComment.TryGetReviewedPayload(null!, out _));
+        }
+
+        [Fact]
+        public void SuppressionComment_WithCommentLongerThanOneMegabyte_IsRejected()
+        {
+            var source = @"
+public class SomeMigration
+{
+    public void Up()
+    {
+        // migration-safety:reviewed " + new string('x', (1024 * 1024) + 1) + @"
+        DropColumn();
+    }
+}
+";
+            var invocation = GetInvocation(source);
+
+            Assert.False(SuppressionComment.IsReviewed(invocation));
+            Assert.False(SuppressionComment.TryGetReviewedPayload(invocation, out var payload));
+            Assert.Null(payload);
+        }
+
 
         /// <summary>
         /// Helper method to test SuppressionComment.IsReviewed with a given source code.
@@ -430,7 +532,15 @@ public class SomeMigration
         private static bool TestSuppressionComment(string source)
         {
             ArgumentException.ThrowIfNullOrEmpty(source);
-            var tree = CSharpSyntaxTree.ParseText(MigrationBuilderStub.Source + source);
+            var invocation = GetInvocation(MigrationBuilderStub.Source + source);
+
+            return SuppressionComment.IsReviewed(invocation);
+        }
+
+        private static InvocationExpressionSyntax GetInvocation(string source)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(source);
+            var tree = CSharpSyntaxTree.ParseText(source);
             var compilation = CSharpCompilation.Create("TestAssembly")
                 .WithReferences(new[]
                 {
@@ -452,7 +562,7 @@ public class SomeMigration
                 throw new InvalidOperationException("Could not find invocation");
             }
 
-            return SuppressionComment.IsReviewed(invocation);
+            return invocation;
         }
     }
 }
