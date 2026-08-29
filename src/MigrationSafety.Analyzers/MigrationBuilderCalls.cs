@@ -38,6 +38,16 @@ namespace MigrationSafety.Analyzers
             InvocationExpressionSyntax invocation,
             SemanticModel semanticModel)
         {
+            if (invocation == null)
+            {
+                throw new ArgumentNullException(nameof(invocation));
+            }
+
+            if (semanticModel == null)
+            {
+                throw new ArgumentNullException(nameof(semanticModel));
+            }
+
             // Walk the invocation chain to find any .Annotation() calls
             var current = invocation.Parent;
             while (current != null)
@@ -88,7 +98,12 @@ namespace MigrationSafety.Analyzers
         /// </summary>
         internal static bool IsMigrationBuilderMethod(IMethodSymbol method)
         {
-            var containing = method?.ContainingType;
+            if (method == null)
+            {
+                throw new ArgumentNullException(nameof(method));
+            }
+
+            var containing = method.ContainingType;
             return containing != null && containing.Name == MigrationBuilderTypeName;
         }
 
@@ -102,6 +117,21 @@ namespace MigrationSafety.Analyzers
             IMethodSymbol method,
             string parameterName)
         {
+            if (invocation == null)
+            {
+                throw new ArgumentNullException(nameof(invocation));
+            }
+
+            if (method == null)
+            {
+                throw new ArgumentNullException(nameof(method));
+            }
+
+            if (parameterName == null)
+            {
+                throw new ArgumentNullException(nameof(parameterName));
+            }
+
             var arguments = invocation.ArgumentList.Arguments;
 
             // Named argument wins if present.
@@ -135,6 +165,21 @@ namespace MigrationSafety.Analyzers
             string parameterName,
             SemanticModel semanticModel)
         {
+            if (invocation == null)
+            {
+                throw new ArgumentNullException(nameof(invocation));
+            }
+
+            if (parameterName == null)
+            {
+                throw new ArgumentNullException(nameof(parameterName));
+            }
+
+            if (semanticModel == null)
+            {
+                throw new ArgumentNullException(nameof(semanticModel));
+            }
+
             var methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
             return methodSymbol != null ? GetStringArgument(invocation, methodSymbol, parameterName) : null;
         }
@@ -151,6 +196,21 @@ namespace MigrationSafety.Analyzers
             IMethodSymbol method,
             string parameterName)
         {
+            if (invocation == null)
+            {
+                throw new ArgumentNullException(nameof(invocation));
+            }
+
+            if (method == null)
+            {
+                throw new ArgumentNullException(nameof(method));
+            }
+
+            if (parameterName == null)
+            {
+                throw new ArgumentNullException(nameof(parameterName));
+            }
+
             var arguments = invocation.ArgumentList.Arguments;
 
             foreach (var argument in arguments)
