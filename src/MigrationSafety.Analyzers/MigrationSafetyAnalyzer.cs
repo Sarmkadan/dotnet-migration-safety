@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -281,27 +282,27 @@ namespace MigrationSafety.Analyzers
             SyntaxNodeAnalysisContext context,
             Location reportLocation)
         {
-            // Check for maxLength narrowing
-            var maxLengthArg = MigrationBuilderCalls.GetNamedArgument(invocation, method, "maxLength");
-            if (maxLengthArg != null)
+            return AnalyzeLiteralNarrowing(invocation, method, "maxLength", value => value is int length && length >= 0)
+                ?? AnalyzeLiteralNarrowing(invocation, method, "precision", value => value is int)
+                ?? AnalyzeLiteralNarrowing(invocation, method, "scale", value => value is int)
+                ?? AnalyzeLiteralNarrowing(invocation, method, "unicode", value => value is false);
+        }
+
+        private static Diagnostic? AnalyzeLiteralNarrowing(
+            InvocationExpressionSyntax invocation,
+            IMethodSymbol method,
+            string argumentName,
+            Func<object?, bool> isNarrowing)
+        {
+            var argument = MigrationBuilderCalls.GetNamedArgument(invocation, method, argumentName);
+            if (argument?.Expression is not LiteralExpressionSyntax literal || !isNarrowing(literal.Token.Value))
             {
-                if (maxLengthArg.Expression is LiteralExpressionSyntax maxLengthLiteral)
-                {
-                    var maxLengthValue = maxLengthLiteral.Token.Value as int?;
-                    if (maxLengthValue.HasValue && maxLengthValue.Value >= 0)
-                    {
-                        // Type narrowing detected - Warning level
-                        var first = GetStringArgumentOrDefault(invocation, method, "name");
-                        var second = GetStringArgumentOrDefault(invocation, method, "table");
-                        return Diagnostic.Create(Descriptors.TableRewrite, invocation.GetLocation(), first, second);
-                    }
-                }
+                return null;
             }
 
-            // Check for type parameter narrowing (e.g., decimal precision/scale changes)
-            // This would require more sophisticated analysis in a real implementation
-
-            return null;
+            var first = GetStringArgumentOrDefault(invocation, method, "name");
+            var second = GetStringArgumentOrDefault(invocation, method, "table");
+            return Diagnostic.Create(Descriptors.TableRewrite, invocation.GetLocation(), first, second);
         }
 
         private static void AnalyzeAddColumn(
