@@ -160,23 +160,17 @@ namespace MigrationSafety.Analyzers
         }
 
         /// <summary>
-        /// Determines whether Down() methods should be analyzed based on editorconfig configuration.
-        /// Returns true if analysis is enabled, false to exclude Down() methods.
+        /// Determines whether Down() methods should be analyzed by reading the
+        /// <c>mig_safety.analyze_down</c> editorconfig option for the current syntax tree.
+        /// Analysis is enabled only when the option is set to <c>true</c>, ignoring case;
+        /// otherwise, Down() methods are excluded.
         /// </summary>
         private static bool ShouldAnalyzeDownMethod(SyntaxNodeAnalysisContext context)
         {
-            // Check if the analyzer is configured to analyze Down() methods
-            // The configuration key is: mig_safety.analyze_down
-            // Default is false (exclude Down() methods)
-
-            // In Roslyn analyzers, we can check additional files or use analyzer config
-            // For now, we'll implement a simple check that can be extended with proper config
-            // The actual implementation would use context.Options.AnalyzerConfigOptionsProvider
-            // For the MVP, we'll assume the default behavior is to exclude Down()
-
-            // This method is a placeholder that can be extended with proper configuration
-            // For the MVP, we'll return false to exclude Down() by default as requested
-            return false;
+            return context.Options.AnalyzerConfigOptionsProvider
+                .GetOptions(context.Node.SyntaxTree)
+                .TryGetValue("mig_safety.analyze_down", out var value)
+                && string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetStringArgumentOrDefault(
