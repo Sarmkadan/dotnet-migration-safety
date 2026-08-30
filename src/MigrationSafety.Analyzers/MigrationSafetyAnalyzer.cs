@@ -91,7 +91,7 @@ namespace MigrationSafety.Analyzers
                     break;
 
                 case "AlterColumn":
-			AnalyzeAlterColumn(context, invocation, method, reportLocation);
+                    AnalyzeAlterColumn(context, invocation, method, reportLocation);
                     break;
 
                 case "AddColumn":
@@ -114,26 +114,19 @@ namespace MigrationSafety.Analyzers
         /// </summary>
         private static bool IsInMigrationClass(SyntaxNodeAnalysisContext context)
         {
-            // Walk up the syntax tree to find the containing class declaration
-            var current = context.Node;
-            while (current != null)
+            var classDeclaration = context.Node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+            if (classDeclaration == null)
             {
-                if (current is ClassDeclarationSyntax classDeclaration)
-                {
-                    // Get the semantic model symbol for the class
-                    var classSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclaration);
-                    if (classSymbol != null)
-                    {
-                        // Check if the class derives from Migration (directly or indirectly)
-                        return IsMigrationType(classSymbol.BaseType);
-                    }
-                    return false;
-                }
-
-                current = current.Parent;
+                return false;
             }
 
-            return false;
+            var classSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclaration);
+            if (classSymbol == null)
+            {
+                return false;
+            }
+
+            return IsMigrationType(classSymbol.BaseType);
         }
 
         /// <summary>
@@ -161,24 +154,8 @@ namespace MigrationSafety.Analyzers
         /// </summary>
         private static bool IsInDownMethod(SyntaxNodeAnalysisContext context)
         {
-            // Walk up the syntax tree to find the containing method
-            var current = context.Node;
-            while (current != null)
-            {
-                if (current is MethodDeclarationSyntax methodDeclaration)
-                {
-                    // Check if the method is named "Down"
-                    if (methodDeclaration.Identifier.Text == "Down")
-                    {
-                        return true;
-                    }
-                    return false;
-                }
-
-                current = current.Parent;
-            }
-
-            return false;
+            var methodDeclaration = context.Node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            return methodDeclaration != null && methodDeclaration.Identifier.Text == "Down";
         }
 
         /// <summary>
@@ -199,6 +176,14 @@ namespace MigrationSafety.Analyzers
             // This method is a placeholder that can be extended with proper configuration
             // For the MVP, we'll return false to exclude Down() by default as requested
             return false;
+        }
+
+        private static string GetStringArgumentOrDefault(
+            InvocationExpressionSyntax invocation,
+            IMethodSymbol method,
+            string argumentName)
+        {
+            return MigrationBuilderCalls.GetStringArgument(invocation, method, argumentName) ?? "?";
         }
 
         private static void AnalyzeAlterColumn(
@@ -234,8 +219,8 @@ namespace MigrationSafety.Analyzers
             }
 
             // Default to warning for other AlterColumn changes
-            var first = MigrationBuilderCalls.GetStringArgument(invocation, method, "name") ?? "?";
-            var second = MigrationBuilderCalls.GetStringArgument(invocation, method, "table") ?? "?";
+            var first = GetStringArgumentOrDefault(invocation, method, "name");
+            var second = GetStringArgumentOrDefault(invocation, method, "table");
             return Diagnostic.Create(Descriptors.TableRewrite, reportLocation, first, second);
         }
 
@@ -262,8 +247,8 @@ namespace MigrationSafety.Analyzers
                     // - If nullable is explicitly set to true, it's a widening operation (Info)
                     // - If nullable is not specified, we can't determine the change
 
-                    var first = MigrationBuilderCalls.GetStringArgument(invocation, method, "name") ?? "?";
-                    var second = MigrationBuilderCalls.GetStringArgument(invocation, method, "table") ?? "?";
+                    var first = GetStringArgumentOrDefault(invocation, method, "name");
+                    var second = GetStringArgumentOrDefault(invocation, method, "table");
 
                     if (newNullable == false)
                     {
@@ -306,8 +291,8 @@ namespace MigrationSafety.Analyzers
                     if (maxLengthValue.HasValue && maxLengthValue.Value >= 0)
                     {
                         // Type narrowing detected - Warning level
-                        var first = MigrationBuilderCalls.GetStringArgument(invocation, method, "name") ?? "?";
-                        var second = MigrationBuilderCalls.GetStringArgument(invocation, method, "table") ?? "?";
+                        var first = GetStringArgumentOrDefault(invocation, method, "name");
+                        var second = GetStringArgumentOrDefault(invocation, method, "table");
                         return Diagnostic.Create(Descriptors.TableRewrite, invocation.GetLocation(), first, second);
                     }
                 }
@@ -357,8 +342,8 @@ namespace MigrationSafety.Analyzers
             string firstArg,
             string secondArg)
         {
-            var first = MigrationBuilderCalls.GetStringArgument(invocation, method, firstArg) ?? "?";
-            var second = MigrationBuilderCalls.GetStringArgument(invocation, method, secondArg) ?? "?";
+            var first = GetStringArgumentOrDefault(invocation, method, firstArg);
+            var second = GetStringArgumentOrDefault(invocation, method, secondArg);
             context.ReportDiagnostic(Diagnostic.Create(descriptor, location, first, second));
         }
 
@@ -370,7 +355,7 @@ namespace MigrationSafety.Analyzers
             Location location,
             string firstArg)
         {
-            var first = MigrationBuilderCalls.GetStringArgument(invocation, method, firstArg) ?? "?";
+            var first = GetStringArgumentOrDefault(invocation, method, firstArg);
             context.ReportDiagnostic(Diagnostic.Create(descriptor, location, first));
         }
     }
