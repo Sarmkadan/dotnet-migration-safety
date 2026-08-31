@@ -42,7 +42,7 @@ namespace MigrationSafety.Analyzers
         // Case-insensitive, whitespace-tolerant regex pattern for the marker
         // Allows: optional whitespace around colon, optional parentheses with content, any trailing text
         private static readonly Regex MarkerPattern = new Regex(
-            @"migration\s*-?\s*safety\s*:\s*reviewed\s*(\([^)]*\))?\s*(.*)",
+            @"migration\s*-?\s*safety\s*:\s*reviewed\s*(?<rules>\([^)]*\))?\s*(?<payload>.*)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace MigrationSafety.Analyzers
                     var match = MarkerPattern.Match(content);
                     if (match.Success)
                     {
-                        payload = match.Groups[1].Value.Trim();
+                        payload = match.Groups["payload"].Value.Trim();
                         return true;
                     }
                 }
