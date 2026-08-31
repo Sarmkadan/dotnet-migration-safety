@@ -248,21 +248,19 @@ namespace MigrationSafety.Analyzers
                     if (newNullable == false)
                     {
                         // false -> narrowing, data loss risk - Warning
-                        return Diagnostic.Create(Descriptors.TableRewrite, invocation.GetLocation(), first, second);
+                        return Diagnostic.Create(Descriptors.TableRewrite, reportLocation, first, second);
                     }
                     else if (newNullable == true)
                     {
                         // true -> widening, safe operation - Info
-                        var descriptor = new DiagnosticDescriptor(
-                            id: DiagnosticIds.TableRewrite,
-                            title: Descriptors.TableRewrite.Title,
-                            messageFormat: Descriptors.TableRewrite.MessageFormat,
-                            category: DiagnosticIds.Category,
-                            defaultSeverity: DiagnosticSeverity.Info,
-                            isEnabledByDefault: Descriptors.TableRewrite.IsEnabledByDefault,
-                            description: "Making a column nullable is a safe operation that doesn't rewrite table data.",
-                            helpLinkUri: Descriptors.TableRewrite.HelpLinkUri);
-                        return Diagnostic.Create(descriptor, invocation.GetLocation(), first, second);
+                        return Diagnostic.Create(
+                            Descriptors.TableRewrite,
+                            reportLocation,
+                            DiagnosticSeverity.Info,
+                            additionalLocations: null,
+                            properties: null,
+                            first,
+                            second);
                     }
                 }
             }
@@ -276,15 +274,16 @@ namespace MigrationSafety.Analyzers
             SyntaxNodeAnalysisContext context,
             Location reportLocation)
         {
-            return AnalyzeLiteralNarrowing(invocation, method, "maxLength", value => value is int length && length >= 0)
-                ?? AnalyzeLiteralNarrowing(invocation, method, "precision", value => value is int)
-                ?? AnalyzeLiteralNarrowing(invocation, method, "scale", value => value is int)
-                ?? AnalyzeLiteralNarrowing(invocation, method, "unicode", value => value is false);
+            return AnalyzeLiteralNarrowing(invocation, method, reportLocation, "maxLength", value => value is int length && length >= 0)
+                ?? AnalyzeLiteralNarrowing(invocation, method, reportLocation, "precision", value => value is int)
+                ?? AnalyzeLiteralNarrowing(invocation, method, reportLocation, "scale", value => value is int)
+                ?? AnalyzeLiteralNarrowing(invocation, method, reportLocation, "unicode", value => value is false);
         }
 
         private static Diagnostic? AnalyzeLiteralNarrowing(
             InvocationExpressionSyntax invocation,
             IMethodSymbol method,
+            Location reportLocation,
             string argumentName,
             Func<object?, bool> isNarrowing)
         {
@@ -296,7 +295,7 @@ namespace MigrationSafety.Analyzers
 
             var first = GetStringArgumentOrDefault(invocation, method, "name");
             var second = GetStringArgumentOrDefault(invocation, method, "table");
-            return Diagnostic.Create(Descriptors.TableRewrite, invocation.GetLocation(), first, second);
+            return Diagnostic.Create(Descriptors.TableRewrite, reportLocation, first, second);
         }
 
         private static void AnalyzeAddColumn(
