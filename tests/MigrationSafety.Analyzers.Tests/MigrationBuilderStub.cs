@@ -14,41 +14,47 @@ namespace Microsoft.EntityFrameworkCore.Migrations
     public class AddColumnOperation { }
     public class CreateIndexOperation { }
     public class AlterColumnOperation { }
+    public abstract class Migration { }
     public class MigrationBuilder
     {
         public OperationBuilder<AddColumnOperation> AddColumn<TColumn>(string name, string table)
         {
-            ArgumentException.ThrowIfNullOrEmpty(name);
-            ArgumentException.ThrowIfNullOrEmpty(table);
+            return null;
+        }
+        public OperationBuilder<AddColumnOperation> AddColumn(string name, string table, bool nullable = true, object defaultValue = null, string defaultValueSql = null)
+        {
             return null;
         }
         public object DropColumn(string name, string table)
         {
-            ArgumentException.ThrowIfNullOrEmpty(name);
-            ArgumentException.ThrowIfNullOrEmpty(table);
             return null;
         }
         public object DropTable(string name)
         {
-            ArgumentException.ThrowIfNullOrEmpty(name);
             return null;
         }
         public OperationBuilder<CreateIndexOperation> CreateIndex(string name, string table, string column)
         {
-            ArgumentException.ThrowIfNullOrEmpty(name);
-            ArgumentException.ThrowIfNullOrEmpty(table);
-            ArgumentException.ThrowIfNullOrEmpty(column);
             return null;
         }
         public OperationBuilder<AlterColumnOperation> AlterColumn<TColumn>(string name, string table)
         {
-            ArgumentException.ThrowIfNullOrEmpty(name);
-            ArgumentException.ThrowIfNullOrEmpty(table);
+            return null;
+        }
+        public OperationBuilder<AlterColumnOperation> AlterColumn(string name, string table, bool? nullable = null, int? maxLength = null, int? precision = null, int? scale = null, bool? unicode = null)
+        {
+            return null;
+        }
+        public object RenameColumn(string name, string table, string newName)
+        {
+            return null;
+        }
+        public object RenameTable(string name, string newName)
+        {
             return null;
         }
         public void Sql(string sql)
         {
-            ArgumentException.ThrowIfNullOrEmpty(sql);
         }
     }
 }

@@ -25,12 +25,13 @@ namespace MigrationSafety.Analyzers.Tests
             await test.RunAsync(CancellationToken.None);
         }
 
-        internal static async Task CodeFixAsync(string source, string fixedSource, params DiagnosticResult[] expected)
+        internal static async Task CodeFixAsync(string source, string fixedSource, int codeActionIndex = 0, params DiagnosticResult[] expected)
         {
             var test = new CSharpCodeFixTest<MigrationSafetyAnalyzer, MarkReviewedCodeFixProvider, DefaultVerifier>
             {
                 TestCode = source,
                 FixedCode = fixedSource,
+                CodeActionIndex = codeActionIndex,
             };
             test.TestState.Sources.Add(("MigrationBuilderStub.cs", MigrationBuilderStub.Source));
             test.FixedState.Sources.Add(("MigrationBuilderStub.cs", MigrationBuilderStub.Source));
